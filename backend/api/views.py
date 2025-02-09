@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def admin_login(request):

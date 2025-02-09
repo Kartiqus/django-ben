@@ -10,9 +10,12 @@ router.register(r'carts', CartViewSet, basename='cart')
 router.register(r'orders', OrderViewSet, basename='order')
 router.register(r'order-items', OrderItemViewSet)
 
+from .views import AdminLoginView
+
 urlpatterns = [
     path('', include(router.urls)),
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('admin/login/', AdminLoginView.as_view(), name='admin_login'),
 ]
 

@@ -5,7 +5,34 @@ from django.shortcuts import get_object_or_404
 from .models import CustomUser, Product, Cart, CartItem, Order, OrderItem
 from .serializers import CustomUserSerializer, ProductSerializer, CartSerializer, CartItemSerializer, OrderSerializer, OrderItemSerializer
 from django.db.models import Q
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
 
+from rest_framework.permissions import IsAdminUser
+
+class AdminOnlyView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request):
+        # Logique pour les vues admin
+        pass
+    
+class AdminLoginView(APIView):
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(username=username, password=password)
+        
+        if user is not None and user.is_admin:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': CustomUserSerializer(user).data
+            })
+        return Response({'error': 'Invalid credentials or not an admin'}, status=status.HTTP_401_UNAUTHORIZED)
+    
 class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
