@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 from .models import CustomUser, Product, Cart, CartItem, Order, OrderItem
-from .serializers import CustomUserSerializer, ProductSerializer, CartSerializer, CartItemSerializer, OrderSerializer
+from .serializers import CustomUserSerializer, ProductSerializer, CartSerializer, CartItemSerializer, OrderSerializer, OrderItemSerializer
 from django.db.models import Q
 
 class CustomUserViewSet(viewsets.ModelViewSet):
@@ -85,7 +85,10 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
+        user = self.request.user
+        if user.is_staff:
+            return Order.objects.all()
+        return Order.objects.filter(user=user)
 
     def create(self, request, *args, **kwargs):
         cart = get_object_or_404(Cart, user=request.user)
@@ -109,13 +112,25 @@ class OrderViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
-    def cancel_order(self, request, pk=None):
+    def update_status(self, request, pk=None):
         order = self.get_object()
-        if order.status == 'pending':
-            order.status = 'cancelled'
+        new_status = request.data.get('status')
+        if new_status in dict(Order.STATUS_CHOICES):
+            order.status = new_status
             order.save()
             serializer = self.get_serializer(order)
             return Response(serializer.data)
         else:
-            return Response({"error": "Cannot cancel this order"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+
+class OrderItemViewSet(viewsets.ModelViewSet):
+    queryset = OrderItem.objects.all()
+    serializer_class = OrderItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return OrderItem.objects.all()
+        return OrderItem.objects.filter(order__user=user)
 
