@@ -14,6 +14,7 @@ SECRET_KEY = 'django-insecure-b=lh2r7ev3q8=dw_v9io76!yadvaik2l-7#3)3)9(vhzms4y2v
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
+CSRF_TRUSTED_ORIGINS = ["https://django-ben.onrender.com"]
 
 INTERNAL_IPS = ["127.0.0.1", "192.168.1.100"]
 
