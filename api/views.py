@@ -8,30 +8,47 @@ from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-
 from rest_framework.permissions import IsAdminUser
 
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from .serializers import CustomUserSerializer, AdminLoginSerializer
+
+class AdminLoginView(APIView):
+    serializer_class = AdminLoginSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        username = serializer.validated_data['username']
+        password = serializer.validated_data['password']
+        
+        user = authenticate(username=username, password=password)
+        
+        if user is None:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        if not user.is_admin:
+            return Response({'error': 'User is not an admin'}, status=status.HTTP_403_FORBIDDEN)
+        
+        refresh = RefreshToken.for_user(user)
+        
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': CustomUserSerializer(user).data
+        })
+    
 class AdminOnlyView(APIView):
     permission_classes = [IsAdminUser]
     
     def get(self, request):
         # Logique pour les vues admin
         pass
-    
-class AdminLoginView(APIView):
-    def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(username=username, password=password)
-        
-        if user is not None and user.is_admin:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'user': CustomUserSerializer(user).data
-            })
-        return Response({'error': 'Invalid credentials or not an admin'}, status=status.HTTP_401_UNAUTHORIZED)
     
 class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()

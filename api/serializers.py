@@ -3,6 +3,12 @@ from .models import CustomUser, Product, Cart, CartItem, Order, OrderItem
 from django.contrib.auth.password_validation import validate_password
 
 
+
+class AdminLoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
 
