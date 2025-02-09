@@ -4,9 +4,11 @@ from django.utils.translation import gettext_lazy as _
 
 class CustomUser(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
+    is_admin = models.BooleanField(default=False)
 
     def __str__(self):
         return self.username
+
 
 class Product(models.Model):
     name = models.CharField(max_length=200)
