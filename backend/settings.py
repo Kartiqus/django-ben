@@ -46,7 +46,7 @@ MIDDLEWARE = [
 # API CONFIG
 
 CORS_ALLOW_ALL_ORIGINS = True
-
+CORS_ALLOWED_HOSTS = ["django-ben.onrender.com"]
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
