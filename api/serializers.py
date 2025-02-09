@@ -1,41 +1,55 @@
 from rest_framework import serializers
-from .models import Product, Order, OrderItem
+from .models import CustomUser, Product, Cart, CartItem, Order, OrderItem
+from django.contrib.auth.password_validation import validate_password
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'username', 'email', 'password', 'first_name', 'last_name')
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        user = CustomUser.objects.create_user(**validated_data)
+        return user
 
 class ProductSerializer(serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField()
+    in_stock = serializers.BooleanField(source='is_in_stock', read_only=True)
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'stock', 'image_url']
+        fields = '__all__'
 
-    def get_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.image:
-            return request.build_absolute_uri(obj.image.url)
-        return None
+class CartItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    
+    class Meta:
+        model = CartItem
+        fields = ['id', 'product', 'quantity', 'subtotal']
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True, read_only=True)
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'items', 'total_price', 'created_at', 'updated_at']
+
 class OrderItemSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True)
+    product = ProductSerializer(read_only=True)
+    subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'product_name', 'quantity', 'price']
+        fields = ['id', 'product', 'quantity', 'price', 'subtotal']
 
 class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True)
+    items = OrderItemSerializer(many=True, read_only=True)
+    total_quantity = serializers.IntegerField(source='get_total_quantity', read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'name', 'email', 'address', 'total_amount', 'status', 'items', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'total_amount', 'status', 'items', 'total_quantity', 'created_at', 'updated_at']
 
-    def create(self, validated_data):
-        items_data = validated_data.pop('items')
-        order = Order.objects.create(**validated_data)
-        for item_data in items_data:
-            product = item_data['product']
-            quantity = item_data['quantity']
-            if product.stock < quantity:
-                raise serializers.ValidationError(f"Stock insuffisant pour {product.name}")
-            OrderItem.objects.create(order=order, price=product.price, **item_data)
-            product.stock -= quantity
-            product.save()
-        return order
