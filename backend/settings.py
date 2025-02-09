@@ -13,7 +13,7 @@ SECRET_KEY = 'django-insecure-b=lh2r7ev3q8=dw_v9io76!yadvaik2l-7#3)3)9(vhzms4y2v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["http://django-ben.onrender.com","https://django-ben.onrender.com"]
 
 
 # Application definition
@@ -46,7 +46,7 @@ MIDDLEWARE = [
 # API CONFIG
 
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWED_HOSTS = ["django-ben.onrender.com"]
+
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
